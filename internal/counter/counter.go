@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+// Counter used to stack up the measures back to the defined period of time.
+// Old measureas are discarded.
 type Counter struct {
 	mtime        time.Time
 	tickDuration time.Duration
@@ -13,8 +15,11 @@ type Counter struct {
 	lock         sync.Mutex
 }
 
+// NewCounter creates a counter.
+// interval is a perion of time the measuring performed.
+// ticks is a number of time gaps interval will be divided to.
+// More ticks mean more acuracy.
 func NewCounter(interval time.Duration, ticks uint) *Counter {
-
 	return &Counter{
 		mtime:        time.Now().Truncate(interval),
 		tickDuration: interval / time.Duration(ticks),
@@ -22,9 +27,10 @@ func NewCounter(interval time.Duration, ticks uint) *Counter {
 	}
 }
 
+// FillUp is used to add a measure. Returns a summ of al the measures passed back to the configured interval.
 func (c *Counter) FillUp(n int64) int64 {
 	c.lock.Lock()
-	c.lock.Unlock()
+	defer c.lock.Unlock()
 
 	var (
 		curTime = time.Now()
