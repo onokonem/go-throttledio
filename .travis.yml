@@ -14,7 +14,7 @@ before_install:
 script:
   - test -z "$(goimports -d ./ 2>&1)"
   - ./bin/golangci-lint run
-  - go test -race -coverprofile=coverage.txt -covermode=atomic
+  - go test -race -coverprofile=coverage.txt -covermode=atomic ./...
 
 after_success:
   - test "$TRAVIS_GO_VERSION" = "1.12" && bash <(curl -s https://codecov.io/bash)

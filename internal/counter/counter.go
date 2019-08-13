@@ -18,7 +18,7 @@ type Counter struct {
 // NewCounter creates a counter.
 // interval is a perion of time the measuring performed.
 // ticks is a number of time gaps interval will be divided to.
-// More ticks mean more acuracy.
+// More ticks mean more accuracy.
 func NewCounter(interval time.Duration, ticks uint) *Counter {
 	return &Counter{
 		mtime:        time.Now().Truncate(interval),
