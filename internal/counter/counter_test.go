@@ -37,7 +37,7 @@ func TestFillUp(t *testing.T) {
 	actual := int64(0)
 	inInterval := 0
 	for k, v := range toCheck {
-		if k.After(margin) {
+		if !k.Before(margin) {
 			inInterval++
 			actual += v
 		}
@@ -45,6 +45,7 @@ func TestFillUp(t *testing.T) {
 
 	if counted != actual {
 		t.Errorf("expected %d, got %d", actual, counted)
+		return
 	}
 
 	fmt.Printf("success on %d counts, %d in interval\n", len(toCheck), inInterval)
@@ -77,7 +78,7 @@ func randomDelay() time.Duration {
 	}
 }
 
-func BenchmarkFoo(b *testing.B) {
+func BenchmarkFillUp(b *testing.B) {
 	c := counter.NewCounter(interval, ticks)
 	for i := 0; i < b.N; i++ {
 		c.FillUp(1)
