@@ -3,6 +3,7 @@ package counter_test
 import (
 	"fmt"
 	"math/rand"
+	"sync"
 	"testing"
 	"time"
 
@@ -17,6 +18,7 @@ const (
 	testDuration = time.Second * 10
 	interval     = time.Second * 3
 	ticks        = 10
+	concurency   = 10
 )
 
 type testTick struct {
@@ -24,24 +26,43 @@ type testTick struct {
 	n int64
 }
 
+type testTicks struct {
+	ticks []testTick
+	lock  sync.Mutex
+}
+
+func (s *testTicks) append(v testTick) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	s.ticks = append(s.ticks, v)
+}
+
 func TestFillUpRandom(t *testing.T) {
-	toCheck := make([]testTick, 0, 500)
+	toCheck := &testTicks{ticks: make([]testTick, 0, 500)}
 
 	c := counter.NewCounter(interval, ticks)
-	counted := int64(0)
 
-	curTime := time.Now()
-	for end := curTime.Add(testDuration); end.After(time.Now()); time.Sleep(randomDelay()) {
-		n := int64(rand.Intn(1500) + 1)
-		curTime = time.Now()
-		counted = c.FillUp(int64(n))
-		toCheck = append(toCheck, testTick{curTime.Truncate(interval / ticks), n})
+	wg := sync.WaitGroup{}
+	wg.Add(concurency)
+	for i := 0; i < concurency; i++ {
+		go func() {
+			defer wg.Done()
+			for end := time.Now().Add(testDuration); end.After(time.Now()); time.Sleep(randomDelay()) {
+				n := int64(rand.Intn(1500) + 1)
+				toCheck.append(testTick{time.Now().Truncate(interval / ticks), n})
+				c.FillUp(n)
+			}
+		}()
 	}
 
+	wg.Wait()
+
+	curTime := time.Now()
+	counted := c.FillUp(0)
 	margin := curTime.Add(-interval).Truncate(interval / ticks)
 	actual := int64(0)
 	inInterval := 0
-	for _, v := range toCheck {
+	for _, v := range toCheck.ticks {
 		if v.t.After(margin) {
 			inInterval++
 			actual += v.n
@@ -53,27 +74,35 @@ func TestFillUpRandom(t *testing.T) {
 		return
 	}
 
-	fmt.Printf("success on %d counts, %d in interval\n", len(toCheck), inInterval)
+	fmt.Printf("success on %d counts, %d in interval\n", len(toCheck.ticks), inInterval)
 }
 
 func TestFillUpShort(t *testing.T) {
-	toCheck := make([]testTick, 0, 500)
+	toCheck := &testTicks{ticks: make([]testTick, 0, 500)}
 
 	c := counter.NewCounter(interval, ticks)
-	counted := int64(0)
 
-	curTime := time.Now()
-	for end := curTime.Add(interval * 3 / 2); !end.Before(time.Now()); time.Sleep(interval / ticks * 3 / 4) {
-		n := int64(rand.Intn(1500) + 1)
-		curTime = time.Now()
-		counted = c.FillUp(int64(n))
-		toCheck = append(toCheck, testTick{curTime.Truncate(interval / ticks), n})
+	wg := sync.WaitGroup{}
+	wg.Add(concurency)
+	for i := 0; i < concurency; i++ {
+		go func() {
+			defer wg.Done()
+			for end := time.Now().Add(interval * 3 / 2); end.After(time.Now()); time.Sleep(interval / ticks * 3 / 4) {
+				n := int64(rand.Intn(1500) + 1)
+				toCheck.append(testTick{time.Now().Truncate(interval / ticks), n})
+				c.FillUp(n)
+			}
+		}()
 	}
 
+	wg.Wait()
+
+	curTime := time.Now()
+	counted := c.FillUp(0)
 	margin := curTime.Add(-interval).Truncate(interval / ticks)
 	actual := int64(0)
 	inInterval := 0
-	for _, v := range toCheck {
+	for _, v := range toCheck.ticks {
 		if v.t.After(margin) {
 			inInterval++
 			actual += v.n
@@ -85,7 +114,7 @@ func TestFillUpShort(t *testing.T) {
 		return
 	}
 
-	fmt.Printf("success on %d counts, %d in interval\n", len(toCheck), inInterval)
+	fmt.Printf("success on %d counts, %d in interval\n", len(toCheck.ticks), inInterval)
 }
 
 func TestFillUpLong(t *testing.T) {
