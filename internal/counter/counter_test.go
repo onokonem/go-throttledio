@@ -57,7 +57,7 @@ func TestFillUpRandom(t *testing.T) {
 
 	wg.Wait()
 
-	curTime := time.Now()
+	curTime := time.Now() // place for race, unfortunately
 	counted := c.FillUp(0)
 	margin := curTime.Add(-interval).Truncate(interval / ticks)
 	actual := int64(0)
@@ -97,7 +97,7 @@ func TestFillUpShort(t *testing.T) {
 
 	wg.Wait()
 
-	curTime := time.Now()
+	curTime := time.Now() // place for race, unfortunately
 	counted := c.FillUp(0)
 	margin := curTime.Add(-interval).Truncate(interval / ticks)
 	actual := int64(0)
@@ -131,6 +131,40 @@ func TestFillUpLong(t *testing.T) {
 	if counted != actual {
 		t.Errorf("expected %d, got %d", actual, counted)
 		return
+	}
+}
+func TestFillUpToCap(t *testing.T) {
+	c := counter.NewCounter(interval, ticks)
+
+	cps := float64(100)
+	total := int64(cps * interval.Seconds())
+	n := int64(140)
+
+	expected := n
+	if actual := c.FillUpToCap(n, cps); actual != expected {
+		t.Errorf("expected %d, got %d", expected, actual)
+	}
+
+	expected = n
+	if actual := c.FillUpToCap(n, cps); actual != expected {
+		t.Errorf("expected %d, got %d", expected, actual)
+	}
+
+	expected = (total - 2*n)
+	if actual := c.FillUpToCap(n, cps); actual != expected {
+		t.Errorf("expected %d, got %d", expected, actual)
+	}
+
+	expected = 0
+	if actual := c.FillUpToCap(n, cps); actual != expected {
+		t.Errorf("expected %d, got %d", expected, actual)
+	}
+
+	time.Sleep(interval)
+
+	expected = n
+	if actual := c.FillUpToCap(n, cps); actual != expected {
+		t.Errorf("expected %d, got %d", expected, actual)
 	}
 }
 

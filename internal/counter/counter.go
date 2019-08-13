@@ -8,11 +8,12 @@ import (
 // Counter used to stack up the measures back to the defined period of time.
 // Old measureas are discarded.
 type Counter struct {
-	mtime        time.Time
-	tickDuration time.Duration
-	tick         int
-	counts       []int64
-	lock         sync.Mutex
+	mtime           time.Time
+	tickDuration    time.Duration
+	intervalSeconds float64
+	tick            int
+	counts          []int64
+	lock            sync.Mutex
 }
 
 // NewCounter creates a counter.
@@ -21,9 +22,10 @@ type Counter struct {
 // More ticks mean more accuracy.
 func NewCounter(interval time.Duration, ticks uint) *Counter {
 	return &Counter{
-		mtime:        time.Now().Truncate(interval),
-		tickDuration: interval / time.Duration(ticks),
-		counts:       make([]int64, ticks),
+		mtime:           time.Now().Truncate(interval),
+		intervalSeconds: interval.Seconds(),
+		tickDuration:    interval / time.Duration(ticks),
+		counts:          make([]int64, ticks),
 	}
 }
 
@@ -32,6 +34,33 @@ func (c *Counter) FillUp(n int64) int64 {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	total := c.cleanUpLocked()
+	c.counts[c.tick] += n
+
+	return total + n
+}
+
+// FillUpToCap adding a measure to make total/interval ratio no bigger than cps (counts per second).
+// Returns an actual amount was added.
+func (c *Counter) FillUpToCap(n int64, cps float64) int64 {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	left := int64(cps*c.intervalSeconds) - c.cleanUpLocked()
+
+	switch {
+	case left <= 0:
+		return 0
+	case left >= n:
+		c.counts[c.tick] += n
+		return n
+	}
+
+	c.counts[c.tick] += left
+	return left
+}
+
+func (c *Counter) cleanUpLocked() int64 {
 	var (
 		curTime = time.Now()
 		gap     = int(curTime.Sub(c.mtime) / c.tickDuration)
@@ -46,7 +75,6 @@ func (c *Counter) FillUp(n int64) int64 {
 	}
 
 	c.tick = (c.tick + gap) % len(c.counts)
-	c.counts[c.tick] += n
 	c.mtime = curTime.Truncate(c.tickDuration)
 
 	return c.totalLocked()
