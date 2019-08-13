@@ -14,32 +14,37 @@ func init() {
 }
 
 const (
-	testDuration = time.Second * 25
+	testDuration = time.Second * 10
 	interval     = time.Second * 3
 	ticks        = 10
 )
 
-func TestFillUp(t *testing.T) {
-	toCheck := make(map[time.Time]int64, 200)
+type testTick struct {
+	t time.Time
+	n int64
+}
+
+func TestFillUpRandom(t *testing.T) {
+	toCheck := make([]testTick, 0, 500)
 
 	c := counter.NewCounter(interval, ticks)
 	counted := int64(0)
 
 	curTime := time.Now()
-	for end := time.Now().Add(testDuration); end.After(time.Now()); time.Sleep(randomDelay()) {
+	for end := curTime.Add(testDuration); end.After(time.Now()); time.Sleep(randomDelay()) {
 		n := int64(rand.Intn(1500) + 1)
 		curTime = time.Now()
 		counted = c.FillUp(int64(n))
-		toCheck[time.Now()] += n
+		toCheck = append(toCheck, testTick{curTime.Truncate(interval / ticks), n})
 	}
 
-	margin := curTime.Add(-interval)
+	margin := curTime.Add(-interval).Truncate(interval / ticks)
 	actual := int64(0)
 	inInterval := 0
-	for k, v := range toCheck {
-		if !k.Before(margin) {
+	for _, v := range toCheck {
+		if v.t.After(margin) {
 			inInterval++
-			actual += v
+			actual += v.n
 		}
 	}
 
@@ -49,6 +54,55 @@ func TestFillUp(t *testing.T) {
 	}
 
 	fmt.Printf("success on %d counts, %d in interval\n", len(toCheck), inInterval)
+}
+
+func TestFillUpShort(t *testing.T) {
+	toCheck := make([]testTick, 0, 500)
+
+	c := counter.NewCounter(interval, ticks)
+	counted := int64(0)
+
+	curTime := time.Now()
+	for end := curTime.Add(interval * 3 / 2); !end.Before(time.Now()); time.Sleep(interval / ticks * 3 / 4) {
+		n := int64(rand.Intn(1500) + 1)
+		curTime = time.Now()
+		counted = c.FillUp(int64(n))
+		toCheck = append(toCheck, testTick{curTime.Truncate(interval / ticks), n})
+	}
+
+	margin := curTime.Add(-interval).Truncate(interval / ticks)
+	actual := int64(0)
+	inInterval := 0
+	for _, v := range toCheck {
+		if v.t.After(margin) {
+			inInterval++
+			actual += v.n
+		}
+	}
+
+	if counted != actual {
+		t.Errorf("expected %d, got %d", actual, counted)
+		return
+	}
+
+	fmt.Printf("success on %d counts, %d in interval\n", len(toCheck), inInterval)
+}
+
+func TestFillUpLong(t *testing.T) {
+	c := counter.NewCounter(interval, ticks)
+
+	for end := time.Now().Add(interval * 3 / 2); end.After(time.Now()); time.Sleep(interval / ticks * 3 / 4) {
+		c.FillUp(int64(int64(rand.Intn(1500) + 1)))
+	}
+
+	time.Sleep(interval)
+	actual := int64(rand.Intn(1500) + 1)
+	counted := c.FillUp(int64(actual))
+
+	if counted != actual {
+		t.Errorf("expected %d, got %d", actual, counted)
+		return
+	}
 }
 
 // 10%  0-5ms
