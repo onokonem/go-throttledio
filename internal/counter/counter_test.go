@@ -133,6 +133,7 @@ func TestFillUpLong(t *testing.T) {
 		return
 	}
 }
+
 func TestFillUpToCap(t *testing.T) {
 	c := counter.NewCounter(interval, ticks)
 
@@ -164,6 +165,19 @@ func TestFillUpToCap(t *testing.T) {
 
 	expected = n
 	if actual := c.FillUpToCap(n, cps); actual != expected {
+		t.Errorf("expected %d, got %d", expected, actual)
+	}
+}
+
+func TestReset(t *testing.T) {
+	c := counter.NewCounter(interval, ticks)
+
+	cps := float64(100)
+
+	c.Reset(cps)
+
+	expected := int64(cps * interval.Seconds())
+	if actual := c.FillUpToCap(1000000, cps*2); actual != expected {
 		t.Errorf("expected %d, got %d", expected, actual)
 	}
 }
