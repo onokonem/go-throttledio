@@ -92,6 +92,7 @@ func (c *Counter) totalLocked() int64 {
 	return total
 }
 
+// Reset the measures to be used with new CPS
 func (c *Counter) Reset(cps float64) {
 	c.lock.Lock()
 	defer c.lock.Unlock()

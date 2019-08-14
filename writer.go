@@ -10,6 +10,7 @@ import (
 	"golang.org/x/xerrors"
 )
 
+// default writer params
 const (
 	Interval = time.Second * 30
 	Ticks    = uint(30)
@@ -17,11 +18,13 @@ const (
 	Timeout  = Interval * 2
 )
 
+// writer errors
 var (
 	ErrUnknownOption = xerrors.New("unknown option")
 	ErrExceeded      = xerrors.New("bandwidth exceeded")
 )
 
+// Writer is a wrapper for io.Writer with throttling implemented
 type Writer struct {
 	writer  io.Writer
 	counter *counter.Counter
@@ -32,6 +35,7 @@ type Writer struct {
 	ticks   int
 }
 
+// NewWriter makes the Writer instance
 func NewWriter(w io.Writer, opts ...WriterOption) *Writer {
 	res := &Writer{
 		writer:  w,
@@ -70,15 +74,18 @@ func NewWriter(w io.Writer, opts ...WriterOption) *Writer {
 	return res
 }
 
+// SetSpeed is used to change throttling CPS on the fly
 func (w *Writer) SetSpeed(cps float64) {
 	w.cps.Store(cps)
 	w.counter.Reset(cps)
 }
 
+// GetSpeed returns current CPS
 func (w *Writer) GetSpeed() float64 {
 	return w.cps.Load().(float64)
 }
 
+// Write method to implement io.Writer interface
 func (w *Writer) Write(p []byte) (n int, err error) {
 	if len(p) == 0 {
 		return 0, nil
