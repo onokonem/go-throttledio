@@ -20,7 +20,6 @@ const (
 var (
 	ErrUnknownOption = xerrors.New("unknown option")
 	ErrExceeded      = xerrors.New("bandwidth exceeded")
-	ErrTimeout       = xerrors.New("timeout waiting for bandwidth")
 )
 
 type Writer struct {
