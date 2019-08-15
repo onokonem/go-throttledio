@@ -176,8 +176,8 @@ func TestReset(t *testing.T) {
 
 	c.Reset(cps)
 
-	expected := int64(cps * interval.Seconds())
-	if actual := c.FillUpToCap(1000000, cps*2); actual != expected {
+	expected := int64(cps * interval.Seconds() / ticks)
+	if actual := c.FillUpToCap(1000000, cps); actual != expected {
 		t.Errorf("expected %d, got %d", expected, actual)
 	}
 }

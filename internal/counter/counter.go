@@ -106,4 +106,5 @@ func (c *Counter) Reset(cps float64) {
 	curTime := time.Now()
 	c.mtime = curTime.Truncate(c.tickDuration)
 	c.tick = int(curTime.Sub(curTime.Truncate(c.intervalDuration)) / c.tickDuration)
+	c.counts[c.tick] = 0
 }

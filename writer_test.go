@@ -34,7 +34,7 @@ func TestWriterSpeed(t *testing.T) {
 		throttledio.SetSpeed(0),
 	)
 
-	spent := copy(w, r, n, 0)
+	spent := cp(w, r, n, 0)
 	maxSpeed := float64(cw.counter) / spent.Seconds()
 	fmt.Printf("unthrotled speed: %d bytes in %v: %2.2f bps\n", n, spent, maxSpeed)
 
@@ -45,7 +45,7 @@ func TestWriterSpeed(t *testing.T) {
 	cw.counter = 0
 	speed := maxSpeed / 2
 
-	spent = copy(w, r, n, speed)
+	spent = cp(w, r, n, speed)
 
 	realSpeed := float64(cw.counter) / spent.Seconds()
 	deviation := (realSpeed - speed) / (speed / 100)
@@ -160,7 +160,7 @@ func (w *countingWriter) Write(p []byte) (n int, err error) {
 	return n, err
 }
 
-func copy(w *throttledio.Writer, r io.Reader, n int64, speed float64) time.Duration {
+func cp(w *throttledio.Writer, r io.Reader, n int64, speed float64) time.Duration {
 	w.SetSpeed(speed)
 
 	startTime := time.Now()
