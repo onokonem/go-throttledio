@@ -25,14 +25,3 @@ func (o *Speed) ItIsAWriterOption() {}
 
 // ItIsAReaderOption exported func should have comment or be unexported
 func (o *Speed) ItIsAReaderOption() {}
-
-// NoError exported type should have comment or be unexported
-type NoError struct {
-	V bool
-}
-
-// ItIsAWriterOption exported func should have comment or be unexported
-func (o *NoError) ItIsAWriterOption() {}
-
-// ItIsAReaderOption exported func should have comment or be unexported
-func (o *NoError) ItIsAReaderOption() {}

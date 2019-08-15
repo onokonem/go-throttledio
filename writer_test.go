@@ -27,8 +27,7 @@ func TestWriterSpeed(t *testing.T) {
 	cw := &countingWriter{w: ioutil.Discard}
 	w := throttledio.NewWriter(
 		cw,
-		throttledio.SetDiscard(false),
-		throttledio.SetNoError(true),
+		throttledio.SetDiscard(false, true),
 		throttledio.SetInterval(time.Second*5, 100),
 		throttledio.SetSpeed(0),
 	)
@@ -66,8 +65,7 @@ func TestWriterDiscard(t *testing.T) {
 	cw := &countingWriter{w: ioutil.Discard}
 	w := throttledio.NewWriter(
 		cw,
-		throttledio.SetDiscard(true),
-		throttledio.SetNoError(true),
+		throttledio.SetDiscard(true, true),
 		throttledio.SetInterval(time.Second*5, 100),
 		throttledio.SetSpeed(1),
 	)
@@ -109,8 +107,7 @@ func TestWriterDiscardError(t *testing.T) {
 	cw := &countingWriter{w: ioutil.Discard}
 	w := throttledio.NewWriter(
 		cw,
-		throttledio.SetDiscard(true),
-		throttledio.SetNoError(false),
+		throttledio.SetDiscard(true, false),
 		throttledio.SetInterval(time.Second*5, 100),
 		throttledio.SetSpeed(1),
 	)

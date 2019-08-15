@@ -54,10 +54,9 @@ func NewWriter(w io.Writer, opts ...WriterOption) *Writer {
 		case *options.Interval:
 			interval = p.Interval
 			ticks = p.Ticks
-		case *options.NoError:
-			res.noerr = p.V
 		case *options.Discard:
-			res.discard = p.V
+			res.discard = p.Discard
+			res.noerr = p.NoErr
 		case *options.Speed:
 			cps = p.V
 		default:

@@ -3,7 +3,8 @@ package options
 
 // Discard exported type should have comment or be unexported
 type Discard struct {
-	V bool
+	Discard bool
+	NoErr   bool
 }
 
 // ItIsAWriterOption exported func should have comment or be unexported
