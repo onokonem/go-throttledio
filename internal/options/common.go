@@ -5,7 +5,8 @@ import "time"
 
 // Interval exported type should have comment or be unexported
 type Interval struct {
-	V time.Duration
+	Interval time.Duration
+	Ticks    uint
 }
 
 // ItIsAWriterOption exported func should have comment or be unexported
@@ -13,17 +14,6 @@ func (o *Interval) ItIsAWriterOption() {}
 
 // ItIsAReaderOption exported func should have comment or be unexported
 func (o *Interval) ItIsAReaderOption() {}
-
-// Ticks exported type should have comment or be unexported
-type Ticks struct {
-	V uint
-}
-
-// ItIsAWriterOption exported func should have comment or be unexported
-func (o *Ticks) ItIsAWriterOption() {}
-
-// ItIsAReaderOption exported func should have comment or be unexported
-func (o *Ticks) ItIsAReaderOption() {}
 
 // Speed exported type should have comment or be unexported
 type Speed struct {

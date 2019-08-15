@@ -52,9 +52,8 @@ func NewWriter(w io.Writer, opts ...WriterOption) *Writer {
 	for _, o := range opts {
 		switch p := o.(type) {
 		case *options.Interval:
-			interval = p.V
-		case *options.Ticks:
-			ticks = p.V
+			interval = p.Interval
+			ticks = p.Ticks
 		case *options.NoError:
 			res.noerr = p.V
 		case *options.Discard:

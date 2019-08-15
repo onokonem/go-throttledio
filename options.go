@@ -22,14 +22,9 @@ type CommonOption interface {
 	ItIsAReaderOption()
 }
 
-// SetInterval creates an option to set measuring interval.
-func SetInterval(v time.Duration) CommonOption {
-	return &options.Interval{V: v}
-}
-
-// SetTicks creates an option to set a number of gaps on measuring interval.
-func SetTicks(v uint) CommonOption {
-	return &options.Ticks{V: v}
+// SetInterval creates an option to set measuring interval and a number of gaps this interval will be divided to.
+func SetInterval(interval time.Duration, ticks uint) CommonOption {
+	return &options.Interval{Interval: interval, Ticks: ticks}
 }
 
 // SetNoError creates an option controlling ErrExceeded error.

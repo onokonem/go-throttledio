@@ -29,8 +29,7 @@ func TestWriterSpeed(t *testing.T) {
 		cw,
 		throttledio.SetDiscard(false),
 		throttledio.SetNoError(true),
-		throttledio.SetInterval(time.Second*5),
-		throttledio.SetTicks(100),
+		throttledio.SetInterval(time.Second*5, 100),
 		throttledio.SetSpeed(0),
 	)
 
@@ -69,8 +68,7 @@ func TestWriterDiscard(t *testing.T) {
 		cw,
 		throttledio.SetDiscard(true),
 		throttledio.SetNoError(true),
-		throttledio.SetInterval(time.Second*5),
-		throttledio.SetTicks(100),
+		throttledio.SetInterval(time.Second*5, 100),
 		throttledio.SetSpeed(1),
 	)
 
@@ -113,8 +111,7 @@ func TestWriterDiscardError(t *testing.T) {
 		cw,
 		throttledio.SetDiscard(true),
 		throttledio.SetNoError(false),
-		throttledio.SetInterval(time.Second*5),
-		throttledio.SetTicks(100),
+		throttledio.SetInterval(time.Second*5, 100),
 		throttledio.SetSpeed(1),
 	)
 
