@@ -390,6 +390,16 @@ func TestMBS(t *testing.T) {
 	}
 }
 
+func TestZeroInput(t *testing.T) {
+	l := limiter.NewController(interval, ticks, 1, 1).BornLimiter()
+
+	expected := int64(0)
+	n := l.FillUp(0)
+	if expected != n {
+		t.Errorf("expected %v, got %v", expected, n)
+	}
+}
+
 func TestInvalidTick(t *testing.T) {
 	e := testPanic(
 		func() {
