@@ -1,9 +1,19 @@
 package counter
 
 import (
+	"math"
 	"sync"
 	"time"
 )
+
+var maxFloat64Int64 = func() float64 { // nolint: gochecknoglobals
+	for i := int64(math.MaxInt64); i > 0; i-- {
+		if int64(float64(i)) == i {
+			return float64(i)
+		}
+	}
+	panic("unreachable reached")
+}()
 
 // Counter used to stack up the measures back to the defined period of time.
 // Old measureas are discarded.
@@ -45,11 +55,16 @@ func (c *Counter) FillUp(n int64) int64 {
 
 // FillUpToCap adding a measure to make total/interval ratio no bigger than cps (counts per second).
 // Returns an actual amount was added.
-func (c *Counter) FillUpToCap(n int64, cps float64) int64 {
+func (c *Counter) FillUpToCap(n int64, cps int64) int64 {
+	maxByCPS := float64(cps) * c.intervalDuration.Seconds()
+	if maxByCPS > maxFloat64Int64 {
+		maxByCPS = maxFloat64Int64
+	}
+
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
-	left := int64(cps*c.intervalDuration.Seconds()) - c.cleanUpLocked()
+	left := int64(maxByCPS) - c.cleanUpLocked()
 
 	switch {
 	case left <= 0:
@@ -93,11 +108,15 @@ func (c *Counter) totalLocked() int64 {
 }
 
 // Reset the measures to be used with new CPS
-func (c *Counter) Reset(cps float64) {
+func (c *Counter) Reset(cps int64) {
+	v := math.MaxInt64 / int64(len(c.counts))
+
+	if maxByCPS := float64(cps) * c.intervalDuration.Seconds(); maxByCPS <= maxFloat64Int64 {
+		v = int64(maxByCPS) / int64(len(c.counts))
+	}
+
 	c.lock.Lock()
 	defer c.lock.Unlock()
-
-	v := int64(cps * c.intervalDuration.Seconds() / float64(len(c.counts)))
 
 	for i := range c.counts {
 		c.counts[i] = v

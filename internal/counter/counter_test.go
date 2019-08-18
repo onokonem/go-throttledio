@@ -2,6 +2,7 @@ package counter_test
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"sync"
 	"testing"
@@ -48,7 +49,7 @@ func TestFillUpRandom(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for end := time.Now().Add(testDuration); end.After(time.Now()); time.Sleep(randomDelay()) {
-				n := int64(rand.Intn(1500) + 1)
+				n := rand.Int63n(1500) + 1
 				toCheck.append(testTick{time.Now().Truncate(interval / ticks), n})
 				c.FillUp(n)
 			}
@@ -88,7 +89,7 @@ func TestFillUpShort(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for end := time.Now().Add(interval * 3 / 2); end.After(time.Now()); time.Sleep(interval / ticks * 3 / 4) {
-				n := int64(rand.Intn(1500) + 1)
+				n := rand.Int63n(1500) + 1
 				toCheck.append(testTick{time.Now().Truncate(interval / ticks), n})
 				c.FillUp(n)
 			}
@@ -121,11 +122,11 @@ func TestFillUpLong(t *testing.T) {
 	c := counter.NewCounter(interval, ticks)
 
 	for end := time.Now().Add(interval * 3 / 2); end.After(time.Now()); time.Sleep(interval / ticks * 3 / 4) {
-		c.FillUp(int64(int64(rand.Intn(1500) + 1)))
+		c.FillUp(int64(rand.Int63n(1500) + 1))
 	}
 
 	time.Sleep(interval)
-	actual := int64(rand.Intn(1500) + 1)
+	actual := rand.Int63n(1500) + 1
 	counted := c.FillUp(int64(actual))
 
 	if counted != actual {
@@ -137,8 +138,8 @@ func TestFillUpLong(t *testing.T) {
 func TestFillUpToCap(t *testing.T) {
 	c := counter.NewCounter(interval, ticks)
 
-	cps := float64(100)
-	total := int64(cps * interval.Seconds())
+	cps := int64(100)
+	total := int64(float64(cps) * interval.Seconds())
 	n := int64(140)
 
 	expected := n
@@ -169,14 +170,44 @@ func TestFillUpToCap(t *testing.T) {
 	}
 }
 
+func TestFillUpToCapZeroCPS(t *testing.T) {
+	c := counter.NewCounter(interval, ticks)
+	n := rand.Int63n(1500)
+
+	expected := int64(0)
+	if actual := c.FillUpToCap(n, 0); actual != expected {
+		t.Errorf("expected %d, got %d", expected, actual)
+	}
+}
+
+func TestFillUpToCapMaxCPS(t *testing.T) {
+	c := counter.NewCounter(interval, ticks)
+	n := rand.Int63n(1500)
+
+	expected := n
+	if actual := c.FillUpToCap(n, math.MaxInt64); actual != expected {
+		t.Errorf("expected %d, got %d", expected, actual)
+	}
+}
+
+func TestFillUpToCapNegativeCPS(t *testing.T) {
+	c := counter.NewCounter(interval, ticks)
+	n := rand.Int63n(1500)
+
+	expected := int64(0)
+	if actual := c.FillUpToCap(n, -1); actual != expected {
+		t.Errorf("expected %d, got %d", expected, actual)
+	}
+}
+
 func TestReset(t *testing.T) {
 	c := counter.NewCounter(interval, ticks)
 
-	cps := float64(100)
+	cps := int64(100)
 
 	c.Reset(cps)
 
-	expected := int64(cps * interval.Seconds() / ticks)
+	expected := int64(float64(cps) * interval.Seconds() / ticks)
 	if actual := c.FillUpToCap(1000000, cps); actual != expected {
 		t.Errorf("expected %d, got %d", expected, actual)
 	}
@@ -209,9 +240,30 @@ func randomDelay() time.Duration {
 	}
 }
 
-func BenchmarkFillUp(b *testing.B) {
+func BenchmarkFillUpConst(b *testing.B) {
 	c := counter.NewCounter(interval, ticks)
 	for i := 0; i < b.N; i++ {
-		c.FillUp(1)
+		c.FillUp(int64(i))
+	}
+}
+
+func BenchmarkFillUpRand(b *testing.B) {
+	c := counter.NewCounter(interval, ticks)
+	for i := 0; i < b.N; i++ {
+		c.FillUp(rand.Int63n(1500))
+	}
+}
+
+func BenchmarkFillUpToCapConst(b *testing.B) {
+	c := counter.NewCounter(interval, ticks)
+	for i := 0; i < b.N; i++ {
+		c.FillUpToCap(1, 10000)
+	}
+}
+
+func BenchmarkFillUpToCapRand(b *testing.B) {
+	c := counter.NewCounter(interval, ticks)
+	for i := 0; i < b.N; i++ {
+		c.FillUpToCap(rand.Int63n(1500), 10000)
 	}
 }
