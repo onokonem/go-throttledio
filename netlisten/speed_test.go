@@ -177,7 +177,7 @@ func TestPerServerSetOnStart(t *testing.T) {
 		panic(err)
 	}
 
-	reqSpeedC := 10000000
+	reqSpeedC := 20000000
 	l = netlisten.LimitListener(l, reqSpeedC, reqSpeedC)
 
 	clientG := new(int64)
