@@ -131,6 +131,8 @@ func (w *errWriter) Write(p []byte) (n int, err error) {
 	return len(p) / 2, errWriterTest
 }
 
+var errPartialWrite = xerrors.New("partialWrite")
+
 func cp(w io.Writer, r io.Reader, n int64) time.Duration {
 	startTime := time.Now()
 
@@ -140,7 +142,7 @@ func cp(w io.Writer, r io.Reader, n int64) time.Duration {
 	}
 
 	if cn != n {
-		panic(xerrors.Errorf("expected %d, got %d", n, cn))
+		panic(xerrors.Errorf("expected %d, got %d: %w", n, cn, errPartialWrite))
 	}
 
 	return time.Now().Sub(startTime)
