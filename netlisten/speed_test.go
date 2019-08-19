@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/onokonem/go-throttledio/limiter"
 	"github.com/onokonem/go-throttledio/netlisten"
 )
 
@@ -26,7 +25,7 @@ const (
 
 // setting bandwidth limit per server
 func TestPerServer(t *testing.T) {
-	l, readLimiter := listen(Interval, Ticks)
+	l := listen()
 
 	clientG := new(int64)
 	client1, client2 := startClients(l.Addr(), clientG)
@@ -47,7 +46,7 @@ func TestPerServer(t *testing.T) {
 
 	// setting bandwidth limit per server
 	reqSpeedC := int64(speedC) / 10
-	readLimiter.SetCommonCPS(reqSpeedC)
+	l.(*netlisten.Listener).ReadLimiter().SetCommonCPS(reqSpeedC)
 	atomic.StoreInt64(client1.total, 0)
 	atomic.StoreInt64(client2.total, 0)
 	atomic.StoreInt64(clientG, 0)
@@ -71,7 +70,7 @@ func TestPerServer(t *testing.T) {
 
 // setting bandwidth limit per connection
 func TestPerConn(t *testing.T) {
-	l, _ := listen(Interval, Ticks)
+	l := listen()
 
 	clientG := new(int64)
 	client1, client2 := startClients(l.Addr(), clientG)
@@ -123,7 +122,7 @@ func TestPerConn(t *testing.T) {
 
 // changing limits in runtime (applies to all existing connections)
 func TestAllConn(t *testing.T) {
-	l, readLimiter := listen(Interval, Ticks)
+	l := listen()
 
 	clientG := new(int64)
 	client1, client2 := startClients(l.Addr(), clientG)
@@ -146,7 +145,7 @@ func TestAllConn(t *testing.T) {
 	reqSpeedC := int64(speedC) / 10
 	reqSpeed1 := reqSpeedC / 3
 	reqSpeed2 := reqSpeedC / 3
-	readLimiter.SetPerChildCPS(reqSpeed1)
+	l.(*netlisten.Listener).ReadLimiter().SetPerChildCPS(reqSpeed1)
 	atomic.StoreInt64(client1.total, 0)
 	atomic.StoreInt64(client2.total, 0)
 	atomic.StoreInt64(clientG, 0)
@@ -169,6 +168,39 @@ func TestAllConn(t *testing.T) {
 	}
 	if math.Abs(deviation2) > MaxDeviation {
 		t.Errorf("2 deviation too big: %3.3f", deviation2)
+	}
+}
+
+func TestPerServerSetOnStart(t *testing.T) {
+	l, err := net.Listen("tcp4", "127.0.0.1:")
+	if err != nil {
+		panic(err)
+	}
+
+	reqSpeedC := 10000000
+	l = netlisten.LimitListener(l, reqSpeedC, reqSpeedC)
+
+	clientG := new(int64)
+	client1, client2 := startClients(l.Addr(), clientG)
+
+	serverG := new(int64)
+	startAccept(l, serverG)
+
+	startTime := time.Now()
+
+	time.Sleep(TestDuration)
+
+	curTime := time.Now()
+	speed1 := float64(atomic.LoadInt64(client1.total)) / curTime.Sub(startTime).Seconds()
+	speed2 := float64(atomic.LoadInt64(client2.total)) / curTime.Sub(startTime).Seconds()
+	speedC := float64(atomic.LoadInt64(clientG)) / curTime.Sub(startTime).Seconds()
+
+	deviationC := (speedC - float64(reqSpeedC)) / float64(reqSpeedC)
+
+	fmt.Printf("Limits: common %d: speed 1: %f, speed 2: %f, common: %f (d: %3.3f) \n", reqSpeedC, speed1, speed2, speedC, deviationC)
+
+	if math.Abs(deviationC) > MaxDeviation {
+		t.Errorf("common deviation too big: %3.3f", deviationC)
 	}
 }
 
@@ -227,15 +259,13 @@ func (c *connWriter) connectAndWrite(a net.Addr) {
 	}
 }
 
-func listen(interval time.Duration, ticks uint) (net.Listener, *limiter.Controller) {
+func listen() net.Listener {
 	l, err := net.Listen("tcp4", "127.0.0.1:")
 	if err != nil {
 		panic(err)
 	}
 
-	readLimiter := limiter.NewController(interval, ticks, 0, 0)
-
-	return netlisten.NewListener(l, readLimiter, limiter.NewController(interval, ticks, 0, 0)), readLimiter
+	return netlisten.LimitListener(l, 0, 0)
 }
 
 func startClients(addr net.Addr, global *int64) (*connWriter, *connWriter) {

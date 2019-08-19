@@ -2,10 +2,22 @@ package netlisten
 
 import (
 	"net"
+	"time"
 
 	"github.com/onokonem/go-throttledio/limiter"
 	"github.com/onokonem/go-throttledio/readwrite"
 )
+
+// LimitListener creates a Listener with the per-server and per-connection read limits provided.
+// write will be unlimited.
+// interval will be 10 seconds, divided to 100 ticks.
+func LimitListener(l net.Listener, globalLimit int, connectionLimit int) net.Listener {
+	return NewListener(
+		l,
+		limiter.NewController(10*time.Second, 100, int64(globalLimit), int64(connectionLimit)),
+		limiter.NewController(10*time.Second, 100, 0, 0),
+	)
+}
 
 // Listener is a net.Listener wrapper
 type Listener struct {
@@ -47,4 +59,14 @@ func (l *Listener) Accept() (net.Conn, error) {
 			w:            readwrite.NewWriter(conn, writeLimiter, false),
 		},
 		nil
+}
+
+// ReadLimiter returns a limiter for read.
+func (l *Listener) ReadLimiter() *limiter.Controller {
+	return l.readLimiter
+}
+
+// WriteLimiter returns a limiter for write.
+func (l *Listener) WriteLimiter() *limiter.Controller {
+	return l.writeLimiter
 }

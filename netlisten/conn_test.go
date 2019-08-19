@@ -18,7 +18,10 @@ import (
 func TestSetWriteCPS(t *testing.T) {
 	interval := time.Second * 3
 
-	l, _ := listen(interval, Ticks)
+	l := listen()
+
+	// just to increase the cover
+	l.(*netlisten.Listener).WriteLimiter()
 
 	reqSpeed := int64(100000)
 
@@ -80,7 +83,7 @@ func TestListenerErr(t *testing.T) {
 }
 
 func TestDeadline(t *testing.T) {
-	l, _ := listen(Interval, Ticks)
+	l := listen()
 
 	go func() {
 		server := accept(l, new(int64))
