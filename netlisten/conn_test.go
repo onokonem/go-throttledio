@@ -1,6 +1,7 @@
 package netlisten_test
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -12,7 +13,6 @@ import (
 	"github.com/onokonem/go-throttledio/limiter"
 	"github.com/onokonem/go-throttledio/netlisten"
 	"github.com/onokonem/go-throttledio/readwrite"
-	"golang.org/x/xerrors"
 )
 
 func TestSetWriteCPS(t *testing.T) {
@@ -107,7 +107,7 @@ func TestDeadline(t *testing.T) {
 	conn.(*netlisten.Conn).SetDeadline(startTime.Add(timeout))
 
 	_, err = conn.Write(make([]byte, 1000))
-	if err == nil || !xerrors.Is(err, readwrite.ErrDeadline) {
+	if err == nil || !errors.Is(err, readwrite.ErrDeadline) {
 		t.Errorf("expected %v, got %v", readwrite.ErrDeadline, err)
 	}
 
@@ -121,7 +121,7 @@ func TestDeadline(t *testing.T) {
 
 	conn.Read(make([]byte, 1000))
 	_, err = conn.Read(make([]byte, 1000))
-	if err == nil || !xerrors.Is(err, readwrite.ErrDeadline) {
+	if err == nil || !errors.Is(err, readwrite.ErrDeadline) {
 		t.Errorf("expected %v, got %v", readwrite.ErrDeadline, err)
 	}
 
@@ -134,7 +134,7 @@ func TestDeadline(t *testing.T) {
 	conn.(*netlisten.Conn).SetWriteDeadline(startTime.Add(timeout))
 
 	_, err = conn.Write(make([]byte, 1000))
-	if err == nil || !xerrors.Is(err, readwrite.ErrDeadline) {
+	if err == nil || !errors.Is(err, readwrite.ErrDeadline) {
 		t.Errorf("expected %v, got %v", readwrite.ErrDeadline, err)
 	}
 
@@ -147,7 +147,7 @@ func TestDeadline(t *testing.T) {
 	conn.(*netlisten.Conn).SetReadDeadline(startTime.Add(timeout))
 
 	_, err = conn.Read(make([]byte, 1000))
-	if err == nil || !xerrors.Is(err, readwrite.ErrDeadline) {
+	if err == nil || !errors.Is(err, readwrite.ErrDeadline) {
 		t.Errorf("expected %v, got %v", readwrite.ErrDeadline, err)
 	}
 
@@ -163,7 +163,7 @@ func (r *noOpReader) Read(p []byte) (int, error) {
 	return len(p), nil
 }
 
-var errListenerTest = xerrors.New("test")
+var errListenerTest = errors.New("test")
 
 type errListener struct {
 	net.Listener
