@@ -1,6 +1,7 @@
 package readwrite_test
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/onokonem/go-throttledio/limiter"
 	"github.com/onokonem/go-throttledio/readwrite"
-	"golang.org/x/xerrors"
 )
 
 func TestReaderDelay(t *testing.T) {
@@ -54,7 +54,7 @@ func TestReadDeadline(t *testing.T) {
 	r.SetDeadline(startTime.Add(timeout))
 
 	_, err := io.CopyN(ioutil.Discard, r, 1000)
-	if err == nil || !xerrors.Is(err, readwrite.ErrDeadline) {
+	if err == nil || !errors.Is(err, readwrite.ErrDeadline) {
 		t.Errorf("expected %v, got %v", readwrite.ErrDeadline, err)
 	}
 
@@ -68,7 +68,7 @@ func TestReadFragile(t *testing.T) {
 	r := readwrite.NewReader(&noOpReader{}, limiter.NewController(interval, ticks, 1, 1).BornLimiter(), true)
 
 	_, err := io.CopyN(ioutil.Discard, r, 1000)
-	if err == nil || !xerrors.Is(err, readwrite.ErrExceeded) {
+	if err == nil || !errors.Is(err, readwrite.ErrExceeded) {
 		t.Errorf("expected %v, got %v", readwrite.ErrExceeded, err)
 	}
 }
@@ -77,7 +77,7 @@ func TestReadError(t *testing.T) {
 	r := readwrite.NewReader(&errReader{}, limiter.NewController(interval, ticks, 0, 0).BornLimiter(), false)
 
 	_, err := r.Read(make([]byte, 1000))
-	if err == nil || !xerrors.Is(err, errReadTest) {
+	if err == nil || !errors.Is(err, errReadTest) {
 		t.Errorf("expected %v, got %v", errReadTest, err)
 	}
 }
@@ -91,7 +91,7 @@ func TestReadEmpty(t *testing.T) {
 	}
 }
 
-var errReadTest = xerrors.New("test")
+var errReadTest = errors.New("test")
 
 type errReader struct{}
 

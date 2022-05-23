@@ -1,15 +1,14 @@
 package readwrite
 
 import (
+	"errors"
 	"net"
-
-	"golang.org/x/xerrors"
 )
 
 // Errors
 var (
-	ErrExceeded = &Error{xerrors.New("bandwidth exceeded"), false, true}
-	ErrDeadline = &Error{xerrors.New("deadline reached"), true, false}
+	ErrExceeded = &Error{errors.New("bandwidth exceeded"), false, true}
+	ErrDeadline = &Error{errors.New("deadline reached"), true, false}
 )
 
 var (

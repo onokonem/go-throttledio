@@ -1,6 +1,7 @@
 package readwrite_test
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/onokonem/go-throttledio/limiter"
 	"github.com/onokonem/go-throttledio/readwrite"
-	"golang.org/x/xerrors"
 )
 
 const (
@@ -75,7 +75,7 @@ func TestWriteDeadline(t *testing.T) {
 	w.SetDeadline(startTime.Add(timeout))
 
 	_, err := w.Write(make([]byte, 1000))
-	if err == nil || !xerrors.Is(err, readwrite.ErrDeadline) {
+	if err == nil || !errors.Is(err, readwrite.ErrDeadline) {
 		t.Errorf("expected %v, got %v", readwrite.ErrDeadline, err)
 	}
 
@@ -89,7 +89,7 @@ func TestWriteFragile(t *testing.T) {
 	w := readwrite.NewWriter(ioutil.Discard, limiter.NewController(interval, ticks, 1, 1).BornLimiter(), true)
 
 	_, err := w.Write(make([]byte, 1000))
-	if err == nil || !xerrors.Is(err, readwrite.ErrExceeded) {
+	if err == nil || !errors.Is(err, readwrite.ErrExceeded) {
 		t.Errorf("expected %v, got %v", readwrite.ErrExceeded, err)
 	}
 }
@@ -98,7 +98,7 @@ func TestWriteError(t *testing.T) {
 	w := readwrite.NewWriter(&errWriter{}, limiter.NewController(interval, ticks, 0, 0).BornLimiter(), false)
 
 	_, err := w.Write(make([]byte, 1000))
-	if err == nil || !xerrors.Is(err, errWriterTest) {
+	if err == nil || !errors.Is(err, errWriterTest) {
 		t.Errorf("expected %v, got %v", errWriterTest, err)
 	}
 }
@@ -123,7 +123,7 @@ func (w *countingWriter) Write(p []byte) (n int, err error) {
 	return n, err
 }
 
-var errWriterTest = xerrors.New("test")
+var errWriterTest = errors.New("test")
 
 type errWriter struct{}
 
@@ -131,7 +131,7 @@ func (w *errWriter) Write(p []byte) (n int, err error) {
 	return len(p) / 2, errWriterTest
 }
 
-var errPartialWrite = xerrors.New("partialWrite")
+var errPartialWrite = errors.New("partialWrite")
 
 func cp(w io.Writer, r io.Reader, n int64) time.Duration {
 	startTime := time.Now()
@@ -142,7 +142,7 @@ func cp(w io.Writer, r io.Reader, n int64) time.Duration {
 	}
 
 	if cn != n {
-		panic(xerrors.Errorf("expected %d, got %d: %w", n, cn, errPartialWrite))
+		panic(fmt.Errorf("expected %d, got %d: %w", n, cn, errPartialWrite))
 	}
 
 	return time.Now().Sub(startTime)
