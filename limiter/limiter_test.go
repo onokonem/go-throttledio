@@ -1,6 +1,7 @@
 package limiter_test
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"math/rand"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"github.com/onokonem/go-throttledio/limiter"
-	"golang.org/x/xerrors"
 )
 
 // u u u
@@ -409,7 +409,7 @@ func TestInvalidTick(t *testing.T) {
 
 	fmt.Printf("got: %#+v\n", e)
 
-	if err, ok := e.(error); !ok || !xerrors.Is(err, limiter.ErrInvalidParams) {
+	if err, ok := e.(error); !ok || !errors.Is(err, limiter.ErrInvalidParams) {
 		t.Errorf("expected %#+v, got %#+v", limiter.ErrInvalidParams, e)
 	}
 }

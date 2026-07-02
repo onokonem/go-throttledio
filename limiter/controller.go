@@ -1,17 +1,18 @@
 package limiter
 
 import (
+	"errors"
+	"fmt"
 	"math"
 	"sync/atomic"
 	"time"
 
 	"github.com/onokonem/go-throttledio/internal/counter"
-	"golang.org/x/xerrors"
 )
 
 // Errors
 var (
-	ErrInvalidParams = xerrors.New("parameter invalid")
+	ErrInvalidParams = errors.New("parameter invalid")
 )
 
 // Controller is a struct to create and control Limiters.
@@ -40,7 +41,7 @@ func NewController(interval time.Duration, ticks uint, commonCPS int64, perChild
 	}
 
 	if ticks == 0 {
-		panic(xerrors.Errorf("ticks: %d: %w", ticks, ErrInvalidParams))
+		panic(fmt.Errorf("ticks: %d: %w", ticks, ErrInvalidParams))
 	}
 
 	c := &Controller{
